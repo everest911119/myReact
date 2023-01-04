@@ -1,6 +1,7 @@
 import { Props, Key, Ref } from 'shared/ReactTypes';
 import { WorkTag } from './workTag';
 import { Flags, NoFlags } from './fiberFlags';
+import { Container } from './hostConfig';
 export class FiberNode {
 	type: any;
 	tag: WorkTag;
@@ -38,4 +39,10 @@ export class FiberNode {
 		this.alternate = null;
 		this.flag = NoFlags;
 	}
+}
+
+// 根节点的更新
+
+export class FibreRootNode {
+	container: Container;
 }
