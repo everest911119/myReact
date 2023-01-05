@@ -1,7 +1,7 @@
 import { Props, Key, Ref } from 'shared/ReactTypes';
 import { WorkTag } from './workTag';
 import { Flags, NoFlags } from './fiberFlags';
-import { Container } from './hostConfig';
+import { Container } from 'hostConfig';
 export class FiberNode {
 	type: any;
 	tag: WorkTag;
@@ -14,9 +14,11 @@ export class FiberNode {
 	child: FiberNode | null;
 	index: number;
 	memoizedProps: Props;
+	memoizedState: any;
 	// current fiberNode 与 wip fiberNode之间的切换
 	alternate: FiberNode | null;
 	flag: Flags;
+	updateQuene: unknown;
 	constructor(tag: WorkTag, pendingProps: Props, key: Key) {
 		// 实例
 		this.tag = tag;
@@ -34,15 +36,53 @@ export class FiberNode {
 
 		// 作为工作单元
 		this.pendingProps = pendingProps;
+		this.updateQuene = null;
+		this.memoizedState = null;
 		// 确定下来的props
 		this.memoizedProps = null;
 		this.alternate = null;
+		// 副作用
 		this.flag = NoFlags;
 	}
 }
 
 // 根节点的更新
 
-export class FibreRootNode {
+export class FiberRootNode {
 	container: Container;
+	current: FiberNode;
+	finishWork: FiberNode | null;
+	constructor(container: Container, hostRootFiber: FiberNode) {
+		this.container = container;
+		this.current = hostRootFiber;
+		hostRootFiber.stateNode = this;
+		this.finishWork = null;
+	}
 }
+
+export const createWorkInProgress = (
+	current: FiberNode,
+	pendingProps: Props
+): FiberNode => {
+	let wip = current.alternate;
+	// 双缓冲机制 每一次获取对应的fiberNode
+	if (wip === null) {
+		// mount
+		// 首屏渲染时 wip 是null
+		wip = new FiberNode(current.tag, pendingProps, current.key);
+
+		wip.stateNode = current.stateNode;
+		wip.alternate = current;
+		current.alternate = wip;
+	} else {
+		// update
+		wip.pendingProps = pendingProps;
+		wip.flag = NoFlags;
+	}
+	wip.type = current.type;
+	wip.updateQuene = current.updateQuene;
+	wip.child = current.child;
+	wip.memoizedState = current.memoizedState;
+	wip.memoizedProps = current.memoizedProps;
+	return wip;
+};

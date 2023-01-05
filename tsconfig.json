@@ -17,6 +17,9 @@
 		"noImplicitReturns": false,
 		"skipLibCheck": true,
 		"typeRoots": ["./types", "./node_modules/@types/"],
-		"baseUrl": "./packages"
+		"baseUrl": "./packages",
+		"paths": {
+			"hostConfig":["./react-reconciler/src/hostConfig.ts"]
+		}
 	}
 }

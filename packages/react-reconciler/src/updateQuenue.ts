@@ -13,17 +13,17 @@ export const createUpdate = <State>(action: Action<State>): Update<State> => {
 	};
 };
 
-export const createUpdateQuene = <Action>() => {
+export const createUpdateQuene = <State>() => {
 	return {
 		shared: {
 			pending: null
 		}
-	} as UpdateQuene<Action>;
+	} as UpdateQuene<State>;
 };
 
-export const enqueneUpdate = <Action>(
-	updateQuene: UpdateQuene<Action>,
-	update: Update<Action>
+export const enqueneUpdate = <State>(
+	updateQuene: UpdateQuene<State>,
+	update: Update<State>
 ) => {
 	updateQuene.shared.pending = update;
 };
