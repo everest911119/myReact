@@ -4,6 +4,7 @@ const distPath = path.resolve(__dirname, '../../dist/node_modules');
 import fs from 'fs';
 import ts from 'rollup-plugin-typescript2';
 import cjs from '@rollup/plugin-commonjs';
+import replace from '@rollup/plugin-replace';
 export function resolvePkgPath(pkgName, isDist) {
 	if (isDist) {
 		return `${distPath}/${pkgName}`;
@@ -19,6 +20,12 @@ export function getPackageJson(pkgName) {
 	return JSON.parse(str);
 }
 
-export function getBaseRollupPlugins({ typescript = {} } = {}) {
-	return [cjs(), ts(typescript)];
+export function getBaseRollupPlugins({
+	alias = {
+		__DEV__: true,
+		preventAssignment: true
+	},
+	typescript = {}
+} = {}) {
+	return [replace(alias), cjs(), ts(typescript)];
 }

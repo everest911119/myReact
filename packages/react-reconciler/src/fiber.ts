@@ -1,5 +1,5 @@
-import { Props, Key, Ref } from 'shared/ReactTypes';
-import { WorkTag } from './workTag';
+import { Props, Key, Ref, ReactElementType } from 'shared/ReactTypes';
+import { FunctionComponent, HostComponent, WorkTag } from './workTag';
 import { Flags, NoFlags } from './fiberFlags';
 import { Container } from 'hostConfig';
 export class FiberNode {
@@ -18,6 +18,7 @@ export class FiberNode {
 	// current fiberNode 与 wip fiberNode之间的切换
 	alternate: FiberNode | null;
 	flag: Flags;
+	subtreeFlag: Flags;
 	updateQuene: unknown;
 	constructor(tag: WorkTag, pendingProps: Props, key: Key) {
 		// 实例
@@ -43,6 +44,8 @@ export class FiberNode {
 		this.alternate = null;
 		// 副作用
 		this.flag = NoFlags;
+		// 子树包含的flag
+		this.subtreeFlag = NoFlags;
 	}
 }
 
@@ -78,6 +81,7 @@ export const createWorkInProgress = (
 		// update
 		wip.pendingProps = pendingProps;
 		wip.flag = NoFlags;
+		wip.subtreeFlag = NoFlags;
 	}
 	wip.type = current.type;
 	wip.updateQuene = current.updateQuene;
@@ -86,3 +90,17 @@ export const createWorkInProgress = (
 	wip.memoizedProps = current.memoizedProps;
 	return wip;
 };
+
+export function createFiberFromElement(element: ReactElementType): FiberNode {
+	const { key, type, props } = element;
+	let fiberTag: WorkTag = FunctionComponent;
+	if (typeof type === 'string') {
+		// <div/> type:'div'
+		fiberTag = HostComponent;
+	} else if (typeof type !== 'function' && __DEV__) {
+		console.warn('not defined type', element);
+	}
+	const fiber = new FiberNode(fiberTag, props, key);
+	fiber.type = type;
+	return fiber;
+}

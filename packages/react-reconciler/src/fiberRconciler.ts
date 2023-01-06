@@ -24,6 +24,7 @@ export function updateContainer(
 ) {
 	const hostRootFiber = root.current;
 	// 触发更新
+	// reactDOM.createRoot(root).render(<App />) 这个组件对应的就是element
 	const update = createUpdate<ReactElementType | null>(element);
 	enqueneUpdate(
 		hostRootFiber.updateQuene as UpdateQuene<ReactElementType | null>,
