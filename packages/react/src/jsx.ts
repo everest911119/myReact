@@ -87,3 +87,11 @@ export const jsxDEV = (type: ElementType, config: any) => {
 
 	return ReactElement(type, key, ref, props);
 };
+// 合法的react Element
+export function isValidElement(object: any) {
+	return (
+		typeof object === 'object' &&
+		object !== null &&
+		object.$$typeof === REACT_ELEMENT_TYPE
+	);
+}
