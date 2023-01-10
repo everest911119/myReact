@@ -129,6 +129,7 @@ export function childReconciler(shouldTrackEffects: boolean) {
 function useFiber(fiber: FiberNode, pendingProps: Props): FiberNode {
 	// fiber复用的情况
 	const clone = createWorkInProgress(fiber, pendingProps);
+
 	// clone fiber 和现在的fiber alternative 相互指
 	clone.index = 0;
 	clone.sibling = null;

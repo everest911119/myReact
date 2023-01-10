@@ -5,6 +5,7 @@ import {
 	createUpdate,
 	createUpdateQuene,
 	enqueneUpdate,
+	processUpdateQuene,
 	UpdateQuene
 } from './updateQuenue';
 import { Action } from 'shared/ReactTypes';
@@ -47,22 +48,30 @@ export function renderWithHooks(wip: FiberNode) {
 	const children = Component(props);
 	// render之后进行重置操作
 	currentlyRenderingFiber = null;
+	workInProgressHook = null;
+	currentHook = null;
 	return children;
 }
 
 const HooksDispatcherOnMount: Dispatcher = {
 	useState: mountState
 };
-// update时的dispatcher
+// update时的dispatcher;
 const HooksDispatcheronUpdate: Dispatcher = {
 	useState: updateState
 };
 
-function updateState<State>(
-	initalState: () => State | State
-): [State, Dispatch<State>] {
+function updateState<State>(): [State, Dispatch<State>] {
 	// 找到useState当前的数据
-	const hook;
+	const hook = updateWorkInProgresHook();
+	// 实现updateState中新的state的逻辑
+	const queue = hook.updateQueue as UpdateQuene<State>;
+	const pending = queue.shared.pending;
+	if (pending !== null) {
+		const { memoizedState } = processUpdateQuene(hook.memoizedState, pending);
+		hook.memoizedState = memoizedState;
+	}
+	return [hook.memoizedState, queue.dispatch as Dispatch<State>];
 }
 
 function updateWorkInProgresHook(): Hook {

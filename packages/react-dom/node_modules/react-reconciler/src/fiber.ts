@@ -21,6 +21,7 @@ export class FiberNode {
 	subtreeFlag: Flags;
 	updateQuene: unknown;
 	deletions: FiberNode[] | null;
+	clone: boolean | null;
 	constructor(tag: WorkTag, pendingProps: Props, key: Key) {
 		// 实例
 		this.tag = tag;
@@ -48,6 +49,7 @@ export class FiberNode {
 		// 子树包含的flag
 		this.subtreeFlag = NoFlags;
 		this.deletions = null;
+		this.clone = null;
 	}
 }
 
@@ -75,7 +77,7 @@ export const createWorkInProgress = (
 		// mount
 		// 首屏渲染时 wip 是null
 		wip = new FiberNode(current.tag, pendingProps, current.key);
-
+		wip.clone = true;
 		wip.stateNode = current.stateNode;
 		wip.alternate = current;
 		current.alternate = wip;

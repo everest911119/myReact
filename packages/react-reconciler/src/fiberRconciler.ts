@@ -13,6 +13,7 @@ import { HostRoot } from './workTag';
 export function createContainer(container: Container) {
 	// 初始化
 	const hostRootFiber = new FiberNode(HostRoot, {}, null);
+	hostRootFiber.clone = false;
 	const root = new FiberRootNode(container, hostRootFiber);
 	hostRootFiber.updateQuene = createUpdateQuene();
 	return root;
