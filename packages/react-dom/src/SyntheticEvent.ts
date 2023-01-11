@@ -93,4 +93,4 @@ function collectPaths(
 
 // 构造合成事件
 
-function createSyntheticEvent(e: Event) {}
+// function createSyntheticEvent(e: Event) {}
