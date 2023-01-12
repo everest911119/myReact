@@ -44,8 +44,14 @@ function dispatchEvent(container: Container, eventType: string, e: Event) {
 		eventType
 	);
 	// 2 构造合成事件
+	const se = createSyntheticEvent(e);
 	// 3 变量capture
-	// 4 遍历bubble
+	triggerEventFlow(capture, se);
+	if (!se.__stopPropagation) {
+		// 4 遍历bubble
+		// 如果捕获阶段stopPropagation 停止冒泡
+		triggerEventFlow(bubble, se);
+	}
 }
 
 function getEventCallbackNameFromEventType(
@@ -93,4 +99,27 @@ function collectPaths(
 
 // 构造合成事件
 
-// function createSyntheticEvent(e: Event) {}
+function createSyntheticEvent(e: Event) {
+	const syntheticEvent = e as SyntheticEvent;
+	syntheticEvent.__stopPropagation = false;
+	const originStopPropagation = e.stopPropagation;
+	// 合成事件的stopPropagation方法
+	syntheticEvent.stopPropagation = () => {
+		syntheticEvent.__stopPropagation = true;
+		if (originStopPropagation) {
+			originStopPropagation();
+		}
+	};
+	return syntheticEvent;
+}
+
+function triggerEventFlow(paths: EventCallback[], se: SyntheticEvent) {
+	for (let i = 0; i < paths.length; i++) {
+		const callback = paths[i];
+		callback.call(null, se);
+		if (se.__stopPropagation) {
+			// 阻值事件继续传播
+			break;
+		}
+	}
+}
