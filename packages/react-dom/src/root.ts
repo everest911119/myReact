@@ -12,6 +12,7 @@ export function createRoot(container: Container) {
 	const root = createContainer(container);
 	return {
 		render(element: ReactElementType) {
+			// 代理点击事件
 			initEvent(container, 'click');
 			return updateContainer(element, root);
 		}
