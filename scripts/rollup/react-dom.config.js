@@ -1,5 +1,6 @@
 import { getPackageJson, resolvePkgPath, getBaseRollupPlugins } from './utils';
 const { name, module, peerDependencies } = getPackageJson('react-dom');
+console.log(name, module, peerDependencies, 'aaa');
 import generatePackageJson from 'rollup-plugin-generate-package-json';
 import alias from '@rollup/plugin-alias';
 // react-dom 包的路径
