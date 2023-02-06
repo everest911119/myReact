@@ -135,7 +135,6 @@ function mountState<State>(
 		memoizedState = initalState;
 	}
 	const queue = createUpdateQuene<State>();
-	debugger;
 	hook.updateQueue = queue;
 	hook.memoizedState = memoizedState;
 	// @ts-ignore
