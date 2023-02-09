@@ -4,8 +4,12 @@ import ReactDOM from 'react-dom';
 
 function App() {
 	const [num, setNum] = useState(10);
-	window.setNum = setNum;
-	return num >= 3 ? <div>{num}</div> : <Child />;
+	return (
+		<div onClickCapture={() => setNum(num + 1)}>
+			{num}
+			<p>123</p>
+		</div>
+	);
 }
 
 function Child() {
