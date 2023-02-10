@@ -94,6 +94,8 @@ export function childReconciler(shouldTrackEffects: boolean) {
 		existingChildren.forEach((fiber) => {
 			deleteChild(returnFiber, fiber);
 		});
+		// 此时placement对应的DOM方法是parenetNode.appendChild 现在placement 多了一层移动 需要支持parentNode.insertBefore
+		return firstNewFiber;
 	}
 	// 判断是否可以复用
 	function updateFromMap(

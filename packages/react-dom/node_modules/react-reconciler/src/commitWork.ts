@@ -151,12 +151,39 @@ const commitPlacement = (finishWork: FiberNode) => {
 	}
 	// parent DOM
 	const hostParent = getHostParent(finishWork);
+
+	// host sibling parentNode.insertBefore 需要找到目标兄弟的Host节点，
+	// 1 可能并不是目标fiber的直接兄弟节点
+	/** A 组件的兄弟节点不B节点 而是B组件下的div节点 A 的host节点是兄弟节点的child
+	 * 需要遍历sibling 至到找到sibling下的host 节点
+	 *  情况1 <A/><B/>
+	 * function B() {
+	 * 	return <div />
+	 * }
+	 * 情况2
+	 * <app /> <div />
+	 * function App() {
+	 * 	return <A/>
+	 * }
+	 *  A组件的host类型的兄弟节点是他父节点的兄弟节点
+	 * 需要向上找
+	 * getHostSibling 函数
+	 */
+
 	// finishWork ~DOM dom appendChild 到parent 上
 	if (hostParent !== null) {
 		appendPlacementNodeToContainer(finishWork, hostParent);
 	}
 };
-
+function getHostSibling(fiber: FiberNode) {
+	const node: FiberNode = fiber;
+	while (true) {
+		node.sibling?.return = node.return;
+		node = node.sibling;
+		if (node.tag !== HostText) {
+		}
+	}
+}
 function getHostParent(fiber: FiberNode): Container | null {
 	let parent = fiber.return;
 	while (parent) {
