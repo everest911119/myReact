@@ -7,7 +7,8 @@ import {
 	FunctionComponent,
 	HostComponent,
 	HostRoot,
-	HostText
+	HostText,
+	Fragment
 } from './workTag';
 
 // 递归中的递阶段
@@ -25,6 +26,9 @@ export const beginWork = (wip: FiberNode) => {
 			return null;
 		case FunctionComponent:
 			return updateFunctionComponent(wip);
+		// 处理fragment的情况
+		case Fragment:
+			return updateFragment(wip);
 		default:
 			if (__DEV__) {
 				console.warn('not achieve type');
@@ -34,6 +38,12 @@ export const beginWork = (wip: FiberNode) => {
 	}
 	return null;
 };
+// fragement
+function updateFragment(wip: FiberNode) {
+	const nextChildren = wip.pendingProps;
+	reconcileChildFibers(wip, nextChildren);
+	return wip.child;
+}
 // function Component
 function updateFunctionComponent(wip: FiberNode) {
 	const nextProps = wip.pendingProps;

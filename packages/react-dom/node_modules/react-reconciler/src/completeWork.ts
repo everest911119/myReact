@@ -12,7 +12,8 @@ import {
 	FunctionComponent,
 	HostComponent,
 	HostRoot,
-	HostText
+	HostText,
+	Fragment
 } from './workTag';
 
 // 标记更新
@@ -66,8 +67,7 @@ export const completeWork = (wip: FiberNode) => {
 
 			return null;
 		case HostRoot:
-			bubbleProperties(wip);
-			return null;
+		case Fragment:
 		case FunctionComponent:
 			bubbleProperties(wip);
 			return null;
