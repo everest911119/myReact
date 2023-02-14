@@ -41,7 +41,7 @@ export const beginWork = (wip: FiberNode) => {
 // fragement
 function updateFragment(wip: FiberNode) {
 	const nextChildren = wip.pendingProps;
-	reconcileChildFibers(wip, nextChildren);
+	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }
 // function Component
@@ -96,7 +96,7 @@ function reconcileChildren(wip: FiberNode, children: ReactElementType) {
 	const current = wip.alternate;
 	if (current !== null) {
 		// update流程
-		wip.child = reconcileChildFibers(wip, current?.child, children);
+		wip.child = reconcileChildFibers(wip, current.child, children);
 	} else {
 		// mount 流程
 		wip.child = mountChildFibers(wip, null, children);

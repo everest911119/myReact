@@ -111,6 +111,7 @@ function commitDeletion(childToDelete: FiberNode) {
 				break;
 		}
 	});
+	// 此时留下来的delete节点都是同一级的
 	// 移除dom
 	if (rootChildrenToDelete.length) {
 		const hostParent = getHostParent(childToDelete);
@@ -204,7 +205,7 @@ const commitPlacement = (finishWork: FiberNode) => {
 
 	// finishWork ~DOM dom appendChild 到parent 上
 	if (hostParent !== null) {
-		insertOrappendPlacementNodeToContainer(finishWork, hostParent);
+		insertOrappendPlacementNodeToContainer(finishWork, hostParent, sibling);
 	}
 };
 function getHostSibling(fiber: FiberNode) {
@@ -238,10 +239,10 @@ function getHostSibling(fiber: FiberNode) {
 				node.child.return = node;
 				node = node.child;
 			}
-			if ((node.flag & Placement) === NoFlags) {
-				// 找到了host节点
-				return node.stateNode;
-			}
+		}
+		if ((node.flag & Placement) === NoFlags) {
+			// 找到了host节点
+			return node.stateNode;
 		}
 	}
 }
@@ -281,10 +282,10 @@ function insertOrappendPlacementNodeToContainer(
 	}
 	const child = finishWork.child;
 	if (child !== null) {
-		insertOrappendPlacementNodeToContainer(child, hostParent);
+		insertOrappendPlacementNodeToContainer(child, hostParent, before);
 		let sibling = child.sibling;
 		while (sibling !== null) {
-			insertOrappendPlacementNodeToContainer(sibling, hostParent);
+			insertOrappendPlacementNodeToContainer(sibling, hostParent, before);
 			sibling = sibling.sibling;
 		}
 	}

@@ -27,7 +27,11 @@ function App() {
 					</li>
 				</>
 			) : (
-				<div>abcd</div>
+				<>
+					<li key="1">1</li>
+					<Child />
+					<li key="2">2</li>
+				</>
 			)}
 		</ul>
 	);
@@ -35,9 +39,9 @@ function App() {
 
 function Child() {
 	return (
-		<div>
+		<li>
 			<span>hello123</span>
-		</div>
+		</li>
 	);
 }
 console.log(App);

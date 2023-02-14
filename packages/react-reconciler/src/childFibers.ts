@@ -342,22 +342,22 @@ jsxs(Fragment, {
 		}
 		// 判断当前fiber的类型
 		if (typeof newChild === 'object' && newChild !== null) {
-			switch (newChild.$$typeof) {
-				case REACT_ELEMENT_TYPE:
-					return placeSingleChild(
-						reconcileSingleElement(returnFiber, currentFiber, newChild)
-					);
-				default:
-					if (__DEV__) {
-						console.warn('not achieve reconcile type', newChild);
-					}
-					break;
-			}
-			// TODO
 			// 多节点的情况 ul> li*3
 			if (Array.isArray(newChild)) {
 				return reconcileChildArray(returnFiber, currentFiber, newChild);
 			}
+		}
+
+		switch (newChild.$$typeof) {
+			case REACT_ELEMENT_TYPE:
+				return placeSingleChild(
+					reconcileSingleElement(returnFiber, currentFiber, newChild)
+				);
+			default:
+				if (__DEV__) {
+					console.warn('not achieve reconcile type', newChild);
+				}
+				break;
 		}
 
 		// HostText
