@@ -1,24 +1,63 @@
+import { scheduleMicroTask } from 'hostConfig';
 import { beginWork } from './beginWork';
 import { commitMutationEffect } from './commitWork';
 import { completeWork } from './completeWork';
 import { createWorkInProgress, FiberNode, FiberRootNode } from './fiber';
 import { MutationMask, NoFlags } from './fiberFlags';
+import {
+	getHighestPriorityLane,
+	Lane,
+	mergeLane,
+	NoLane,
+	SyncLane
+} from './fiberlane';
+import { flushSyncCallbacks, scheduleSyncTaskCallback } from './syncTaskQuene';
 import { HostRoot } from './workTag';
 
 let workInProgress: FiberNode | null = null;
-
+// 本次更新的lane
+let wipRootRenderingLane: Lane = NoLane;
 // 开是的时候是FiberRootNode 不是普通的fiber
-function prepareFreshStack(root: FiberRootNode) {
+function prepareFreshStack(root: FiberRootNode, lane: Lane) {
 	// 闭包 创造alternative
 	workInProgress = createWorkInProgress(root.current, {});
 	console.warn('prepare start', workInProgress);
+	wipRootRenderingLane = lane;
 }
 
-export function scheduleUpdateOnFiber(fiber: FiberNode) {
+// 每次触发更新都会执行scheduleUpdateOnFiber ensureRootIsScheduled 调度阶段的入口 调度时 把render阶段的入口 传给scheduleSyncTaskCallback 在这个方法中会构造一个数组 如果3次调用setState syqncQuene中会有3个performSyncWorkOnRoot的回调函数 执行3次scheduleMicroTask 在微任务中执行flushSyncCallbacks 后两次再进来的时候由于isFlusingSyncQuene是true会跳出这个方法
+// 最终结果是syncQuene只会遍历一次
+export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 	// 调度功能
 	// 首屏渲染时 是fiberRootNode 当其他节点更新时 需要遍历到根节点 fiberRootNode
 	const root = markUpdateFromFiberToRoot(fiber);
-	renderRoot(root);
+	markRootUpdated(root, lane);
+	ensureRootIsScheduled(root);
+}
+
+function ensureRootIsScheduled(root: FiberRootNode) {
+	// 判读机制 所有lanes中优先级最高的
+	const updateLane = getHighestPriorityLane(root.pendingLanes);
+	if (updateLane === NoLane) {
+		// 没有lane就代表没有update 没有更新
+		return;
+	}
+	if (updateLane === SyncLane) {
+		// 同步优先级， 用微任务调度
+		if (__DEV__) {
+			console.log('in microtask schedule priority', updateLane);
+		}
+		scheduleSyncTaskCallback(
+			performSyncWorkOnRoot.bind(null, root, updateLane)
+		);
+		scheduleMicroTask(flushSyncCallbacks);
+	} else {
+		// 其他优先级用宏任务调度
+	}
+}
+
+function markRootUpdated(root: FiberRootNode, lane: Lane) {
+	root.pendingLanes = mergeLane(root.pendingLanes, lane);
 }
 
 function markUpdateFromFiberToRoot(fiber: FiberNode) {
@@ -35,9 +74,16 @@ function markUpdateFromFiberToRoot(fiber: FiberNode) {
 	return null;
 }
 
-function renderRoot(root: FiberRootNode) {
+function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
+	const nextLane = getHighestPriorityLane(root.pendingLanes);
+	if (nextLane !== SyncLane) {
+		// 其他比synclane低的优先级
+		// NoLane
+		ensureRootIsScheduled(root);
+		return;
+	}
 	// 初始化
-	prepareFreshStack(root);
+	prepareFreshStack(root, lane);
 	do {
 		try {
 			workLoop();
@@ -53,6 +99,8 @@ function renderRoot(root: FiberRootNode) {
 
 	const finishWork = root.current.alternate;
 	root.finishWork = finishWork;
+	root.finishedLane = lane;
+	wipRootRenderingLane = NoLane;
 	// wip fiberNode 树中的flag进行dom操作
 	commitRoot(root);
 }
@@ -65,8 +113,14 @@ function commitRoot(root: FiberRootNode) {
 	if (__DEV__) {
 		console.warn('commit start', finishWork);
 	}
+	// 移除lane操作
+	const lane = root.finishedLane;
+	if (lane === NoLane && __DEV__) {
+		console.error('commit should not have no lane');
+	}
 	// 重置
 	root.finishWork = null;
+	root.finishedLane = NoLane;
 	// 判断是否存在3个子阶段需要的操作
 	// root flag subtreeflag
 
@@ -91,7 +145,7 @@ function workLoop() {
 }
 
 function performUnitOfwork(fiber: FiberNode) {
-	const next = beginWork(fiber);
+	const next = beginWork(fiber, wipRootRenderingLane);
 	// 执行完成后
 
 	fiber.memoizedProps = fiber.pendingProps;

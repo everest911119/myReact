@@ -2,6 +2,7 @@ import { ReactElementType } from 'shared/ReactTypes';
 import { mountChildFibers, reconcileChildFibers } from './childFibers';
 import { FiberNode } from './fiber';
 import { renderWithHooks } from './fiberHooks';
+import { Lane } from './fiberlane';
 import { processUpdateQuene, UpdateQuene } from './updateQuenue';
 import {
 	FunctionComponent,
@@ -12,12 +13,12 @@ import {
 } from './workTag';
 
 // 递归中的递阶段
-export const beginWork = (wip: FiberNode) => {
+export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 	// 比较, 返回子fiberNode
 	switch (wip.tag) {
 		case HostRoot:
 			//1  计算状态的最新址
-			return updateHostRoot(wip);
+			return updateHostRoot(wip, renderLane);
 		// 2 创建子fiberNode
 		case HostComponent:
 			// hostComponent 只创建子节点
@@ -25,7 +26,7 @@ export const beginWork = (wip: FiberNode) => {
 		case HostText:
 			return null;
 		case FunctionComponent:
-			return updateFunctionComponent(wip);
+			return updateFunctionComponent(wip, renderLane);
 		// 处理fragment的情况
 		case Fragment:
 			return updateFragment(wip);
@@ -45,9 +46,9 @@ function updateFragment(wip: FiberNode) {
 	return wip.child;
 }
 // function Component
-function updateFunctionComponent(wip: FiberNode) {
+function updateFunctionComponent(wip: FiberNode, renderLane: Lane) {
 	const nextProps = wip.pendingProps;
-	const nextChild = renderWithHooks(wip);
+	const nextChild = renderWithHooks(wip, renderLane);
 	/**
 	 * function component
 	 * function App() {
@@ -59,13 +60,13 @@ function updateFunctionComponent(wip: FiberNode) {
 	reconcileChildren(wip, nextChild);
 	return wip.child;
 }
-function updateHostRoot(wip: FiberNode) {
+function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 	const baseState = wip.memoizedState;
 	const updateQuene = wip.updateQuene as UpdateQuene<Element>;
 	const pending = updateQuene.shared.pending;
 	updateQuene.shared.pending = null;
 	// 当前的最新状态
-	const { memoizedState } = processUpdateQuene(baseState, pending);
+	const { memoizedState } = processUpdateQuene(baseState, pending, renderLane);
 	wip.memoizedState = memoizedState;
 	// 创建子fiberNode
 	const nextChild = wip.memoizedState;

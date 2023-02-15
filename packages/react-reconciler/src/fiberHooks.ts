@@ -10,11 +10,13 @@ import {
 } from './updateQuenue';
 import { Action } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
+import { NoLane, requestUpdateLane, requestUpdateLanes } from './fiberlane';
 // 当前rendering的fiber fiber 中memoizedState指向hook的链表
 let currentlyRenderingFiber: FiberNode | null = null;
 const { currentDispatcher } = internals;
 let workInProgressHook: Hook | null = null;
 let currentHook: Hook | null = null;
+let renderLane: Lane = NoLane;
 interface Hook {
 	memoizedState: any;
 	updateQueue: unknown;
@@ -27,12 +29,12 @@ interface Hook {
  *
  */
 
-export function renderWithHooks(wip: FiberNode) {
+export function renderWithHooks(wip: FiberNode, lane: Lane) {
 	// render之前进行赋值操作
 	currentlyRenderingFiber = wip;
 	// 在执行hook操作时创建链表
 	wip.memoizedState = null;
-
+	renderLane = lane;
 	const current = wip.alternate;
 	if (current !== null) {
 		// update
@@ -50,6 +52,7 @@ export function renderWithHooks(wip: FiberNode) {
 	currentlyRenderingFiber = null;
 	workInProgressHook = null;
 	currentHook = null;
+	renderLane = NoLane;
 	return children;
 }
 
@@ -68,7 +71,11 @@ function updateState<State>(): [State, Dispatch<State>] {
 	const queue = hook.updateQueue as UpdateQuene<State>;
 	const pending = queue.shared.pending;
 	if (pending !== null) {
-		const { memoizedState } = processUpdateQuene(hook.memoizedState, pending);
+		const { memoizedState } = processUpdateQuene(
+			hook.memoizedState,
+			pending,
+			renderLane
+		);
 		hook.memoizedState = memoizedState;
 	}
 	return [hook.memoizedState, queue.dispatch as Dispatch<State>];
@@ -149,10 +156,12 @@ function dispatchSetState<State>(
 	updateQueue: UpdateQuene<State>,
 	action: Action<State>
 ) {
-	const update = createUpdate(action);
+	// 触发更新
+	const lane = requestUpdateLane();
+	const update = createUpdate(action, lane);
 	enqueneUpdate(updateQueue, update);
 	// 调度更新
-	scheduleUpdateOnFiber(fiber);
+	scheduleUpdateOnFiber(fiber, lane);
 }
 function mountWorkInProgressHook(): Hook {
 	const hook: Hook = {

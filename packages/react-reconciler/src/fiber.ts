@@ -2,6 +2,7 @@ import { Props, Key, Ref, ReactElementType } from 'shared/ReactTypes';
 import { FunctionComponent, HostComponent, WorkTag, Fragment } from './workTag';
 import { Flags, NoFlags } from './fiberFlags';
 import { Container } from 'hostConfig';
+import { Lane, Lanes, NoLane, NoLanes } from './fiberlane';
 export class FiberNode {
 	type: any;
 	tag: WorkTag;
@@ -59,11 +60,18 @@ export class FiberRootNode {
 	container: Container;
 	current: FiberNode;
 	finishWork: FiberNode | null;
+	// 所以没有被消费的lane的集合
+	pendingLanes: Lanes;
+	// 本次更新消费的lane
+	finishedLane: Lane;
 	constructor(container: Container, hostRootFiber: FiberNode) {
 		this.container = container;
 		this.current = hostRootFiber;
 		hostRootFiber.stateNode = this;
 		this.finishWork = null;
+		this.pendingLanes = NoLanes;
+		// 每次更新都有自己的优先级
+		this.finishedLane = NoLane;
 	}
 }
 
