@@ -9,6 +9,8 @@ export const useState: Dispatcher['useState'] = (initialState: any) => {
 	return dispatcher.useState(initialState);
 };
 
+export const useEffect: Dispatcher['useEffect'] = (create, depts);
+
 export const _SECRET_INSIDE_SHARE_LAYER_ = {
 	currentDispatcher
 };

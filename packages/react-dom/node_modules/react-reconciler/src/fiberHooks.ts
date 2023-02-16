@@ -11,6 +11,8 @@ import {
 import { Action } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
 import { NoLane, requestUpdateLane, requestUpdateLanes } from './fiberlane';
+import { Flags, PassiveEffect } from './fiberFlags';
+import { HookHasEffect, Passive } from './hookEffectTag';
 // 当前rendering的fiber fiber 中memoizedState指向hook的链表
 let currentlyRenderingFiber: FiberNode | null = null;
 const { currentDispatcher } = internals;
@@ -28,6 +30,27 @@ interface Hook {
  * 这个字段保存了hook自身的值
  *
  */
+
+export interface Effect {
+	tag: Flags;
+	create: EffectCallback | void;
+	destory: EffectCallback | void;
+	deps: EffectDeps;
+	next: Effect | null;
+}
+/**
+ * 对于fiber 新增PassiveEffect 当前节点存在更新副作用
+ * 对于effect hook passive 代表useEffect 对应的 effect
+ * 如果hook 包含了passive HookHasEffect 代表 有effect 还有effect 更新的副作用
+ *
+ */
+type EffectCallback = () => void;
+type EffectDeps = any[] | null;
+
+// 函数组件的updateQueue
+export interface FCUpdateQueue<State> extends UpdateQuene<State> {
+	lastEffect: Effect | null;
+}
 
 export function renderWithHooks(wip: FiberNode, lane: Lane) {
 	// render之前进行赋值操作
@@ -57,12 +80,73 @@ export function renderWithHooks(wip: FiberNode, lane: Lane) {
 }
 
 const HooksDispatcherOnMount: Dispatcher = {
-	useState: mountState
+	useState: mountState,
+	useEffect: mountEffect
 };
 // update时的dispatcher;
 const HooksDispatcheronUpdate: Dispatcher = {
 	useState: updateState
 };
+
+function mountEffect(create: EffectCallback | void, deps: EffectDeps | void) {
+	// 不同的effect 使用同一个机制
+	// 第一个hook
+	const hook = mountWorkInProgressHook();
+	const nextDeps = deps === undefined ? null : deps;
+	// 当前的fiber 需要处理副作用
+	(currentlyRenderingFiber as FiberNode).flag |= PassiveEffect;
+	hook.memoizedState = pushEffect(
+		Passive | HookHasEffect,
+		create,
+		undefined,
+		nextDeps
+	);
+}
+
+function pushEffect(
+	hookFlags: Flags,
+	create: EffectCallback | void,
+	destory: EffectCallback | void,
+	deps: EffectDeps
+): Effect {
+	// hook next 指向下一个hook
+	// memoizedState中 effect next 指向一个 hook 里面的memizedState
+	// effect 自己会形成一条和其他effect链接的环状链表
+	const effect: Effect = {
+		tag: hookFlags,
+		create,
+		destory,
+		deps,
+		next: null
+	};
+	const fiber = currentlyRenderingFiber as FiberNode;
+	const updateQuene = fiber?.updateQuene as FCUpdateQueue<any>;
+	if (updateQuene === null) {
+		const updateQuene = createFCUpdateQueue();
+		fiber.updateQuene = updateQuene;
+		// 首次形成环状链表
+		effect.next = effect;
+		updateQuene.lastEffect = effect;
+	} else {
+		// 插入effect
+		const lastEffect = updateQuene.lastEffect;
+		if (lastEffect === null) {
+			effect.next = effect;
+			updateQuene.lastEffect = effect;
+		} else {
+			const firstEffect = lastEffect.next;
+			lastEffect.next = effect;
+			effect.next = firstEffect;
+			updateQuene.lastEffect = effect;
+		}
+	}
+	return effect;
+}
+function createFCUpdateQueue<State>() {
+	const updateQuenue = createUpdateQuene<State>() as FCUpdateQueue<State>;
+	updateQuenue.lastEffect = null;
+	return updateQuenue;
+}
 
 function updateState<State>(): [State, Dispatch<State>] {
 	// 找到useState当前的数据
