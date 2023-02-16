@@ -84,9 +84,9 @@ export const processUpdateQuene = <State>(
 		// 第一个update
 		const first = pendingUpdate.next;
 		// pending 是最后一个
-		let pending = pendingUpdate;
+		let pending = pendingUpdate.next;
 		do {
-			const updateLane = pending.lane;
+			const updateLane = pending?.lane;
 			if (updateLane === renderLane) {
 				// 1 baseState 1 update 2 => memorizedState 2
 				// 2 baseState 1 update(x)=>2x memorizedState 2

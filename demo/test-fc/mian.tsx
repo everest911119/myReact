@@ -20,29 +20,15 @@ function App() {
 	return (
 		<ul
 			onClick={() => {
-				setNum((prev) => prev + 1);
-				setCount((prev) => prev + 1);
-				setTimeout(() => {
-					console.log(num);
-				});
+				setNum((num) => num + 1);
+				setNum((num) => num + 2);
+				setNum((num) => num + 3);
+				console.log(num, 'in function');
+				// setCount((prev) => prev + 1);
 			}}
 		>
 			<li>{count}</li>
-			{num % 2 === 0 ? (
-				<>
-					<li key="1">1</li>
-					<li key="2">2</li>
-					<li key="3">
-						3 <div>12qqwqw</div>
-					</li>
-				</>
-			) : (
-				<>
-					<li key="1">1</li>
-					<Child />
-					<li key="2">2</li>
-				</>
-			)}
+			<li>{num}</li>
 		</ul>
 	);
 }

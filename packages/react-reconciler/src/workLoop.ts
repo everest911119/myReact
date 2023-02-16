@@ -7,6 +7,7 @@ import { MutationMask, NoFlags } from './fiberFlags';
 import {
 	getHighestPriorityLane,
 	Lane,
+	markRootFinished,
 	mergeLane,
 	NoLane,
 	SyncLane
@@ -123,7 +124,7 @@ function commitRoot(root: FiberRootNode) {
 	root.finishedLane = NoLane;
 	// 判断是否存在3个子阶段需要的操作
 	// root flag subtreeflag
-
+	markRootFinished(root, lane);
 	const subtreeHasEffect = (finishWork.subtreeFlag & MutationMask) !== NoFlags;
 	const rootHasEffect = (finishWork.flag & MutationMask) !== NoFlags;
 	if (subtreeHasEffect || rootHasEffect) {

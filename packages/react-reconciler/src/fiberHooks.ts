@@ -70,6 +70,8 @@ function updateState<State>(): [State, Dispatch<State>] {
 	// 实现updateState中新的state的逻辑
 	const queue = hook.updateQueue as UpdateQuene<State>;
 	const pending = queue.shared.pending;
+	// pending 被消费掉了
+	queue.shared.pending = null;
 	if (pending !== null) {
 		const { memoizedState } = processUpdateQuene(
 			hook.memoizedState,
