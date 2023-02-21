@@ -10,7 +10,7 @@ import {
 } from './updateQuenue';
 import { Action } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
-import { NoLane, requestUpdateLane, requestUpdateLanes } from './fiberlane';
+import { Lane, NoLane, requestUpdateLane } from './fiberlane';
 import { Flags, PassiveEffect } from './fiberFlags';
 import { HookHasEffect, Passive } from './hookEffectTag';
 // 当前rendering的fiber fiber 中memoizedState指向hook的链表
@@ -56,7 +56,10 @@ export function renderWithHooks(wip: FiberNode, lane: Lane) {
 	// render之前进行赋值操作
 	currentlyRenderingFiber = wip;
 	// 在执行hook操作时创建链表
+	// 重置hooks链表
 	wip.memoizedState = null;
+	// 重置effect链表
+	wip.updateQuene = null;
 	renderLane = lane;
 	const current = wip.alternate;
 	if (current !== null) {
@@ -85,8 +88,51 @@ const HooksDispatcherOnMount: Dispatcher = {
 };
 // update时的dispatcher;
 const HooksDispatcheronUpdate: Dispatcher = {
-	useState: updateState
+	useState: updateState,
+	// update时useEffect实现
+	useEffect: updateEffect
 };
+
+function updateEffect(create: EffectCallback | void, deps: EffectDeps | void) {
+	// updateEffect在依赖变化时
+	const hook = updateWorkInProgresHook();
+	let destroy: EffectCallback | void;
+	const nextDeps = deps === undefined ? null : deps;
+	if (currentHook !== null) {
+		const prevEffect = currentHook.memoizedState as Effect;
+		destroy = prevEffect.destory;
+		if (nextDeps !== null) {
+			// 前比较依赖
+			const prevDeps = prevEffect.deps;
+			if (areHooKinputsEqual(prevDeps, nextDeps)) {
+				hook.memoizedState = pushEffect(Passive, create, destroy, nextDeps);
+				return;
+			}
+		}
+		// 浅比较 不相等
+		(currentlyRenderingFiber as FiberNode).flag |= PassiveEffect;
+		hook.memoizedState = pushEffect(
+			Passive | HookHasEffect,
+			create,
+			destroy,
+			nextDeps
+		);
+	}
+}
+
+function areHooKinputsEqual(nextDeps: EffectDeps, prevDeps: EffectDeps) {
+	if (nextDeps === null || prevDeps === null) {
+		// 每次更新都会执行
+		return false;
+	}
+	for (let i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
+		if (Object.is(prevDeps[i], nextDeps[i])) {
+			continue;
+		}
+		return false;
+	}
+	return true;
+}
 
 function mountEffect(create: EffectCallback | void, deps: EffectDeps | void) {
 	// 不同的effect 使用同一个机制

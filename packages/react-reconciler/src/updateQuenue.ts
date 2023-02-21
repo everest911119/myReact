@@ -90,7 +90,7 @@ export const processUpdateQuene = <State>(
 			if (updateLane === renderLane) {
 				// 1 baseState 1 update 2 => memorizedState 2
 				// 2 baseState 1 update(x)=>2x memorizedState 2
-				const action = pending.action;
+				const action = pending?.action;
 				if (action instanceof Function) {
 					baseState = action(baseState);
 				} else {

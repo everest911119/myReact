@@ -4,6 +4,7 @@ import { Action } from 'shared/ReactTypes';
 export interface Dispatcher {
 	useState: <T>(initalState: T | (() => T)) => [T, Dispatch<T>];
 	// const [num, updateNUm] = useState(0) 也可以接受一个函数 useState(num=>num+1)
+	useEffect: (callback: () => void | void, deps: any[] | void) => void;
 }
 export type Dispatch<State> = (action: Action<State>) => void;
 const currentDispatcher: { current: Dispatcher | null } = {
