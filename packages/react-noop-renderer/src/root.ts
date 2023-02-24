@@ -22,7 +22,6 @@ export function createRoot() {
 	}
 	return {
 		render(element: ReactElementType) {
-			// 代理点击事件
 			return updateContainer(element, root);
 		},
 		getChildren() {
