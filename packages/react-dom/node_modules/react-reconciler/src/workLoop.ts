@@ -65,6 +65,7 @@ function ensureRootIsScheduled(root: FiberRootNode) {
 		if (__DEV__) {
 			console.log('in microtask schedule priority', updateLane);
 		}
+		// debugger;
 		scheduleSyncTaskCallback(
 			performSyncWorkOnRoot.bind(null, root, updateLane)
 		);
@@ -151,6 +152,8 @@ function commitRoot(root: FiberRootNode) {
 		if (!rootDoesHasPassiveEffects) {
 			rootDoesHasPassiveEffects = true;
 			// 调度副作用, 类似在setTimeOut中执行一个回调
+			console.log('start schedule');
+			debugger;
 			scheduleCallback(NormalPriority, () => {
 				// 执行副作用(useEffect)
 				flushPassiveEffect(root.pendingPassiveEffects);
@@ -158,7 +161,7 @@ function commitRoot(root: FiberRootNode) {
 			});
 		}
 	}
-
+	console.log('remove flag');
 	const subtreeHasEffect = (finishWork.subtreeFlag & MutationMask) !== NoFlags;
 	const rootHasEffect = (finishWork.flag & MutationMask) !== NoFlags;
 	if (subtreeHasEffect || rootHasEffect) {
