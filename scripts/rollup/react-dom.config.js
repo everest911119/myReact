@@ -23,7 +23,7 @@ export default [
 			}
 		],
 		// 这时打包react-dom时不会将react代码打包 是react-reconciler react 同用一个数据共享层
-		external: [...Object.keys(peerDependencies)],
+		external: [...Object.keys(peerDependencies), 'scheduler'],
 		plugins: [
 			...getBaseRollupPlugins(),
 			// webpack resolve alias 功能

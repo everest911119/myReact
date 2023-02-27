@@ -32,6 +32,7 @@ export function commitUpdate(fiber: FiberNode) {
 			break;
 		// 如果hostComponent变化了 执行createInstance里的方法updateFiberProps
 		case HostComponent:
+			return updateFiberProps(fiber.stateNode, fiber.memoizedProps);
 		default:
 			if (__DEV__) {
 				console.warn('no finish update Type');

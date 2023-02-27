@@ -40,11 +40,14 @@ import ReactDOM from 'react-noop-renderer';
 // 		</li>
 // 	);
 // }
-// console.log(App);
+// // console.log(App);
 // function App() {
 // 	const [num, updateNum] = useState(0);
 // 	useEffect(() => {
 // 		console.log('App mount');
+// 		return () => {
+// 			console.log('unmount app');
+// 		};
 // 	}, []);
 
 // 	useEffect(() => {

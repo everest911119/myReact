@@ -49,6 +49,7 @@ export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 	// 首屏渲染时 是fiberRootNode 当其他节点更新时 需要遍历到根节点 fiberRootNode
 	const root = markUpdateFromFiberToRoot(fiber);
 	markRootUpdated(root, lane);
+	console.log(root, 'root');
 	ensureRootIsScheduled(root);
 }
 

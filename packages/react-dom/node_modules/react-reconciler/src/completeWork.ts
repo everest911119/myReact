@@ -5,7 +5,8 @@ import {
 	createTextInstacne,
 	Instance
 } from 'hostConfig';
-import { updateFiberProps } from 'react-dom/src/SyntheticEvent';
+// 这里依赖react-dom当打包react-noop-renderer时会报错
+// import { updateFiberProps } from 'react-dom/src/SyntheticEvent';
 import { FiberNode } from './fiber';
 import { NoFlags, Update } from './fiberFlags';
 import {
@@ -33,7 +34,8 @@ export const completeWork = (wip: FiberNode) => {
 				// stateNode保存了dom节点--update
 				// 1 props是否变化 {onClick:xx} {onClick:xxx}
 				// 2如果变了 updateFlag
-				updateFiberProps(wip.stateNode, newProps);
+				markUpdate(wip);
+				// updateFiberProps(wip.stateNode, newProps);
 			} else {
 				// mount时
 				// 1 构建domm
@@ -78,7 +80,7 @@ export const completeWork = (wip: FiberNode) => {
 			break;
 	}
 };
-function appendAllChildren(parent: Container, wip: FiberNode) {
+function appendAllChildren(parent: Container | Instance, wip: FiberNode) {
 	/**
 	 * 希望在parent下插入wip节点, wip可能不是dom节点, 对wip进行递归 寻找hostComponent 如果找到进行appendChild操作
 	 * 如果到头 向上找 找sibling

@@ -65,6 +65,7 @@ const commitMutationEffectOnFiber = (
 		finishWork.flag &= ~Placement;
 	}
 	if ((flag & Update) !== NoFlags) {
+		// commmitUpdate收敛回了hostConfig下的commitUpdate
 		commitUpdate(finishWork);
 		finishWork.flag &= ~Update;
 	}
