@@ -4,6 +4,7 @@ import { Flags, NoFlags } from './fiberFlags';
 import { Container } from 'hostConfig';
 import { Lane, Lanes, NoLane, NoLanes } from './fiberlane';
 import { Effect } from './fiberHooks';
+import { CallbackNode } from 'scheduler';
 export interface PendingPassiveEffects {
 	unMount: Effect[];
 	update: Effect[];
@@ -70,12 +71,16 @@ export class FiberRootNode {
 	// 本次更新消费的lane
 	finishedLane: Lane;
 	pendingPassiveEffects: PendingPassiveEffects;
+	callbackNode: CallbackNode | null;
+	callbackPriority: Lane;
 	constructor(container: Container, hostRootFiber: FiberNode) {
 		this.container = container;
 		this.current = hostRootFiber;
 		hostRootFiber.stateNode = this;
 		this.finishWork = null;
 		this.pendingLanes = NoLanes;
+		this.callbackNode = null;
+		this.callbackPriority = NoLane;
 		// 每次更新都有自己的优先级
 		this.finishedLane = NoLane;
 		this.pendingPassiveEffects = {
