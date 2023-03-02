@@ -1,6 +1,6 @@
 import { Dispatch } from 'react/src/currentDispatcher';
 import { Action } from 'shared/ReactTypes';
-import { Lane, Lanes } from './fiberlane';
+import { isSubsetofLanes, Lane, Lanes } from './fiberlane';
 export interface Update<State> {
 	action: Action<State>;
 	next: Update<any> | null;
@@ -75,9 +75,15 @@ export const processUpdateQuene = <State>(
 	baseState: State,
 	pendingUpdate: Update<State> | null,
 	renderLane: Lane
-): { memoizedState: State } => {
+): {
+	memoizedState: State;
+	baseState: State;
+	baseQueue: Update<State> | null;
+} => {
 	const result: ReturnType<typeof processUpdateQuene<State>> = {
-		memoizedState: baseState
+		memoizedState: baseState,
+		baseState: baseState,
+		baseQueue: null
 	};
 	if (pendingUpdate !== null) {
 		// pending c->a->b->c中最先插入的 update
@@ -86,8 +92,57 @@ export const processUpdateQuene = <State>(
 		// pending 是最后一个
 		let pending = pendingUpdate.next;
 		do {
-			const updateLane = pending?.lane;
-			if (updateLane === renderLane) {
+			const updateLane = pending?.lane as Lane;
+			if (!isSubsetofLanes(renderLane, updateLane)) {
+				// 处理优先级不够的逻辑
+				// 由于高优先级任务会打断低优先级任务, 同一个组件根据update计算state可能执行多次， 所以要保存state
+				// update的连续性， 和update的优先级
+				// 1. baseState是本次参与更新的初始state
+				//  memoiziatedState是上次更新的state
+				// 2 . 如果本次更新没有跳过 下次更新的baseState= memoiziatedState
+				// 3 如果本次更新update有跳过 本次更新的memoiziatedState是考虑优先级情况下的计算结果 baseState是最后一个没被跳过的update计算后的结果， 下次更新baseState!== memoiziatedState
+				// 4. 本次更新被跳过的update以及后面所有update,都会被保存在baseQueue中参与下一次state的计算
+				// 5. 参与计算保存在baseQueue中的update 优先级会被降低到Nolane 判断优先级是取交集的情况，任何优先级&NoLane = NoLane 所有无论下一次优先级是什么都会参与优先级的计算
+				// u0
+				// {
+				//   action: num => num + 1,
+				//   lane: DefaultLane
+				// }
+				// // u1
+				// {
+				//   action: 3,
+				//   lane: SyncLane
+				// }
+				// // u2
+				// {
+				//   action: num => num + 10,
+				//   lane: DefaultLane
+				// }
+				/*
+				 * 第一次render
+				 * baseState = 0; memoizedState = 0;
+				 * baseQueue = null; updateLane = DefaultLane;
+				 * 第一次render 第一次计算
+				 * baseState = 1; memoizedState = 1;
+				 * baseQueue = null;
+				 * 第一次render 第二次计算
+				 * baseState = 1; memoizedState = 1;
+				 * baseQueue = u1;
+				 * 第一次render 第三次计算
+				 * baseState = 1; memoizedState = 11;
+				 * baseQueue = u1 -> u2(NoLane);
+				 */
+				/*
+				 * 第二次render
+				 * baseState = 1; memoizedState = 11;
+				 * baseQueue = u1 -> u2(NoLane); updateLane = SyncLane
+				 * 第二次render 第一次计算
+				 * baseState = 3; memoizedState = 3;
+				 * 第二次render 第二次计算
+				 * baseState = 13; memoizedState = 13;
+				 */
+			} else {
+				// 优先级足够
 				// 1 baseState 1 update 2 => memorizedState 2
 				// 2 baseState 1 update(x)=>2x memorizedState 2
 				const action = pending?.action;
@@ -95,10 +150,6 @@ export const processUpdateQuene = <State>(
 					baseState = action(baseState);
 				} else {
 					baseState = action;
-				}
-			} else {
-				if (__DEV__) {
-					console.error('something wrong updateLane !== renderLane');
 				}
 			}
 			pending = pending?.next as Update<any>;

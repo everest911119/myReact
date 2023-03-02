@@ -65,3 +65,8 @@ export function schedulerPriorityToLane(schedulerPriority: number) {
 	}
 	return NoLane;
 }
+
+// 比较优先级是否足够 set 本次更新， subset 本身的lane
+export function isSubsetofLanes(set: Lanes, subset: Lane) {
+	return (set & subset) === subset;
+}
