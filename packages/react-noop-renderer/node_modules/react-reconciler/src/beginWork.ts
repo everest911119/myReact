@@ -64,6 +64,8 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 	const baseState = wip.memoizedState;
 	const updateQuene = wip.updateQuene as UpdateQuene<Element>;
 	const pending = updateQuene.shared.pending;
+	// 这里将updateQueue清除了, 考虑将update保存在current中, 只有不进入commit阶段, current wip 不互换, 即使多次render 都能从current 恢复
+	// 对于首屏渲染都是一次性更新完不存在被打断
 	updateQuene.shared.pending = null;
 	// 当前的最新状态
 	const { memoizedState } = processUpdateQuene(baseState, pending, renderLane);

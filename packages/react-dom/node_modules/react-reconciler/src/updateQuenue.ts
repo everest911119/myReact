@@ -1,6 +1,6 @@
 import { Dispatch } from 'react/src/currentDispatcher';
 import { Action } from 'shared/ReactTypes';
-import { isSubsetofLanes, Lane, Lanes } from './fiberlane';
+import { isSubsetofLanes, Lane, Lanes, NoLane } from './fiberlane';
 export interface Update<State> {
 	action: Action<State>;
 	next: Update<any> | null;
@@ -91,6 +91,10 @@ export const processUpdateQuene = <State>(
 		const first = pendingUpdate.next;
 		// pending 是最后一个
 		let pending = pendingUpdate.next;
+		let newBaseState = baseState;
+		let newBaseQueueFirst: Update<State> | null = null;
+		let newBaseQueueLast: Update<State> | null = null;
+		let newState = baseState;
 		do {
 			const updateLane = pending?.lane as Lane;
 			if (!isSubsetofLanes(renderLane, updateLane)) {
@@ -141,20 +145,48 @@ export const processUpdateQuene = <State>(
 				 * 第二次render 第二次计算
 				 * baseState = 13; memoizedState = 13;
 				 */
+				// 优先级不够 被跳过
+				const clone = createUpdate(pending?.action, pending?.lane as number);
+				// 是不是第一个跳过的update
+				if (newBaseQueueFirst === null) {
+					newBaseQueueFirst = clone;
+					newBaseQueueLast = clone;
+					newBaseState = newState;
+				} else {
+					// 不是第一个被跳过的
+					(newBaseQueueLast as Update<State>).next = clone;
+					newBaseQueueLast = clone;
+				}
 			} else {
 				// 优先级足够
 				// 1 baseState 1 update 2 => memorizedState 2
 				// 2 baseState 1 update(x)=>2x memorizedState 2
+				if (newBaseQueueLast !== null) {
+					// 有被跳过的update 后面所有update都会保存在baseQueue中参与下一次计算
+					const clone = createUpdate(pending?.action, NoLane);
+					newBaseQueueLast.next = clone;
+					newBaseQueueLast = clone;
+				}
 				const action = pending?.action;
 				if (action instanceof Function) {
-					baseState = action(baseState);
+					newState = action(baseState);
 				} else {
-					baseState = action;
+					newState = action;
 				}
 			}
 			pending = pending?.next as Update<any>;
 		} while (pending !== first);
+		if (newBaseQueueLast === null) {
+			// 本次计算没有update被跳过
+			newBaseState = newState;
+		} else {
+			// 合成环状链表
+			newBaseQueueLast.next = newBaseQueueFirst;
+		}
+		result.memoizedState = newState;
+		result.baseState = newBaseState;
+		result.baseQueue = newBaseQueueLast;
 	}
-	result.memoizedState = baseState;
+
 	return result;
 };

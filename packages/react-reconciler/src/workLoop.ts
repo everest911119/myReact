@@ -172,6 +172,7 @@ function performConcurrentWorkOnRoot(
 		// 更新完了
 		const finishWork = root.current.alternate;
 		root.finishWork = finishWork;
+		root.finishedLane = lane;
 		wipRootRenderingLane = NoLane;
 		commitRoot(root);
 	} else if (__DEV__) {

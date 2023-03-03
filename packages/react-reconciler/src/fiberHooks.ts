@@ -6,6 +6,7 @@ import {
 	createUpdateQuene,
 	enqueneUpdate,
 	processUpdateQuene,
+	Update,
 	UpdateQuene
 } from './updateQuenue';
 import { Action } from 'shared/ReactTypes';
@@ -23,6 +24,8 @@ interface Hook {
 	memoizedState: any;
 	updateQueue: unknown;
 	next: Hook | null;
+	baseState: any;
+	baseQueue: Update<any> | null;
 }
 /**
  *  对于fc component fiberNode memoizedState指向hook的链表
@@ -201,14 +204,41 @@ function updateState<State>(): [State, Dispatch<State>] {
 	const queue = hook.updateQueue as UpdateQuene<State>;
 	const pending = queue.shared.pending;
 	// pending 被消费掉了
-	queue.shared.pending = null;
+	const baseState = hook.baseState;
+	const current = currentHook as Hook;
+	let baseQueue = current.baseQueue;
+
+	//  需要将update保存在current中 pendingUpdate baseQueue中update
+
 	if (pending !== null) {
-		const { memoizedState } = processUpdateQuene(
-			hook.memoizedState,
-			pending,
-			renderLane
-		);
-		hook.memoizedState = memoizedState;
+		// pending baseQueue update保存在current 中
+		if (baseQueue !== null) {
+			// baseQueue b2->b0->b1->b2
+			// pendingQueue p2->p0-p1->p2
+			// b0
+			const baseFirst = baseQueue.next;
+			// p0
+			const pendingFirst = pending.next;
+			// b2->p0
+			baseQueue.next = pendingFirst;
+			// p2->b0
+			pending.next = baseFirst;
+			// p2->b0->b1->b2->p0->p1->p2
+		}
+		baseQueue = pending;
+		// 保存在current 中
+		current.baseQueue = pending;
+		queue.shared.pending = null;
+		if (baseQueue !== null) {
+			const {
+				memoizedState,
+				baseQueue: newBaseQueue,
+				baseState: newBaseState
+			} = processUpdateQuene(baseState, baseQueue, renderLane);
+			hook.memoizedState = memoizedState;
+			hook.baseState = newBaseState;
+			hook.baseQueue = newBaseQueue;
+		}
 	}
 	return [hook.memoizedState, queue.dispatch as Dispatch<State>];
 }
@@ -246,7 +276,9 @@ function updateWorkInProgresHook(): Hook {
 	const newHook: Hook = {
 		memoizedState: currentHook.memoizedState,
 		updateQueue: currentHook.updateQueue,
-		next: null
+		next: null,
+		baseQueue: currentHook.baseQueue,
+		baseState: currentHook.baseState
 	};
 	if (workInProgressHook === null) {
 		if (currentlyRenderingFiber === null) {
@@ -299,7 +331,9 @@ function mountWorkInProgressHook(): Hook {
 	const hook: Hook = {
 		memoizedState: null,
 		next: null,
-		updateQueue: null
+		updateQueue: null,
+		baseQueue: null,
+		baseState: null
 	};
 	if (workInProgressHook === null) {
 		// mount时 第一个hook
