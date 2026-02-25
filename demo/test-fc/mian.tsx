@@ -47,7 +47,6 @@ function App() {
 		console.log('App mount');
 		return () => {
 			console.log('unmount app');
-			console.log('Unmount');
 		};
 	}, []);
 
