@@ -310,7 +310,9 @@ function mountState<State>(
 	hook.memoizedState = memoizedState;
 	// @ts-ignore
 	const dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
+
 	queue.dispatch = dispatch;
+	console.log('dispatch', queue);
 	return [memoizedState, dispatch];
 }
 // dispatch方法 接入现有的更新流程

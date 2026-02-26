@@ -96,3 +96,4 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 // const root = ReactDOM.createRoot();
 // root.render(<App />);
 // window.root = root;
+//pnpm demo
